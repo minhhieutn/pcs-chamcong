@@ -57,6 +57,8 @@ export default function App() {
     toast("Đã huỷ đơn");
   };
 
+  const pageTitle = view === "new" ? "Tạo đơn xin phép" : "Đơn của tôi";
+
   return (
     <>
       <Header view={view} onChange={setView} />

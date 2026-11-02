@@ -28,16 +28,24 @@ export default function MyRequests({ hidden, items, onCancel }) {
 
   return (
     <section id="view-mine" hidden={hidden}>
-      <div className="toolbar"><h2>Đơn của tôi</h2></div>
+      <div className="toolbar">
+        <h2>Danh sách đơn đã gửi</h2>
+      </div>
       <div id="mineList" className="cards">
         {!list.length ? (
-          <div className="empty"><b>Bạn chưa có đơn nào</b>Đơn bạn gửi sẽ hiện ở đây kèm trạng thái duyệt.</div>
+          <div className="empty">
+            <b>Bạn chưa có đơn nào</b>
+            Đơn bạn gửi sẽ hiện ở đây kèm trạng thái duyệt.
+          </div>
         ) : (
           list.map((r) => {
             const w = whenText(r), a = { status: "pending" }, T = TYPES[r.type];
             return (
               <div className="card" style={{ "--tc": T.c }} key={r.id}>
-                <div className="row"><span className="ty">{T.l}</span><span className={"chip st-" + a.status}>{ST[a.status]}</span></div>
+                <div className="row">
+                  <span className="ty">{T.l}</span>
+                  <span className={"chip st-" + a.status}>{ST[a.status]}</span>
+                </div>
                 <div className="when">{w.main}</div>
                 <div className="meta">{w.sub}</div>
                 <div className="reason">{r.reason}</div>

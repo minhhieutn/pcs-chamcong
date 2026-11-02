@@ -10,7 +10,19 @@ const TYPE_DESC = {
   out: "Vắng mặt rồi quay lại",
 };
 
-const Req = () => <span className="req">*</span>;
+const Req = () => <span className="req"> (*)</span>;
+
+// Bấm vào bất kỳ chỗ nào của ô ngày/giờ cũng mở bảng chọn; vùng icon ở mép phải đã tự mở nên bỏ qua để khỏi mở hai lần
+function openPicker(e) {
+  const el = e.target;
+  if (!(el instanceof HTMLInputElement) || (el.type !== "date" && el.type !== "time") || !el.showPicker) return;
+  if (e.clientX > el.getBoundingClientRect().right - 40) return;
+  try {
+    el.showPicker();
+  } catch {
+    // trình duyệt từ chối mở bảng chọn thì vẫn nhập tay được
+  }
+}
 
 function initialForm() {
   const prof = loadProfile() || {};
@@ -156,146 +168,173 @@ export default function RequestForm({ onSubmit, onInvalid }) {
 
   return (
     <section id="view-new">
-      <form id="f" className="sheet" noValidate ref={formRef} onSubmit={submit} onReset={reset}>
+      <form id="f" className="sheet" noValidate ref={formRef} onSubmit={submit} onReset={reset} onClick={openPicker}>
         <div className="sheet-head">
-          <h2>Đơn xin phép</h2>
+          <h2>Thông tin phiếu xin phép</h2>
           <span className="code" id="today">Ngày lập: {fmtD(todayISO())}</span>
         </div>
 
+        {/* Section 1: Thông tin người làm đơn */}
         <div className="sec">
-          <div className="sec-label">Người làm đơn</div>
-          <div className="grid">
-            <div className={"field" + (errs.name ? " invalid" : "")}>
-              <label htmlFor="name">Họ và tên<Req /></label>
-              <input id="name" autoComplete="name" placeholder="VD: Nguyễn Văn An" value={f.name} onChange={set("name")} />
-              {errs.name && <span className="err">{errs.name}</span>}
-            </div>
-            <div className={"field" + (errs.position ? " invalid" : "")}>
-              <label htmlFor="position">Chức vụ<Req /></label>
-              <input id="position" list="dl-pos" placeholder="VD: Nhân viên chứng từ" value={f.position} onChange={set("position")} />
-              {errs.position && <span className="err">{errs.position}</span>}
-            </div>
-            <div className={"field" + (errs.department ? " invalid" : "")}>
-              <label htmlFor="department">Phòng ban<Req /></label>
-              <input id="department" list="dl-dep" placeholder="VD: Phòng Xuất nhập khẩu" value={f.department} onChange={set("department")} />
-              {errs.department && <span className="err">{errs.department}</span>}
-            </div>
+          <div className="sec-aside">
+            <div className="sec-label">Thông tin người làm đơn</div>
+            <p className="sec-desc">Điền thông tin nhân sự làm đơn</p>
           </div>
-          <datalist id="dl-pos">
-            <option>Nhân viên</option><option>Trưởng nhóm</option><option>Trưởng phòng</option><option>Phó phòng</option><option>Giám đốc</option><option>Thực tập sinh</option>
-          </datalist>
-          <datalist id="dl-dep">
-            <option>Phòng Kinh doanh</option><option>Phòng Chứng từ</option><option>Phòng Khai thác / Vận hành</option><option>Phòng Kế toán</option><option>Phòng Hành chính – Nhân sự</option><option>Phòng Xuất nhập khẩu</option><option>Kho</option>
-          </datalist>
-        </div>
-
-        <div className="sec">
-          <div className="sec-label">Loại đơn</div>
-          <div className="types" id="types">
-            {Object.keys(TYPES).map((k) => (
-              <label key={k} style={{ "--tc": TYPES[k].c }}>
-                <input type="radio" name="type" id={"type-" + k} value={k} checked={t === k} onChange={set("type")} />
-                <b>{TYPES[k].l}</b>
-                <span>{TYPE_DESC[k]}</span>
-              </label>
-            ))}
+          <div className="sec-main">
+            <div className="grid">
+              <div className={"field" + (errs.name ? " invalid" : "")}>
+                <label htmlFor="name">Họ và tên<Req /></label>
+                <input id="name" autoComplete="name" placeholder="VD: Nguyễn Văn An" value={f.name} onChange={set("name")} />
+                {errs.name && <span className="err">{errs.name}</span>}
+              </div>
+              <div className={"field" + (errs.position ? " invalid" : "")}>
+                <label htmlFor="position">Chức vụ<Req /></label>
+                <input id="position" list="dl-pos" placeholder="VD: Nhân viên chứng từ" value={f.position} onChange={set("position")} />
+                {errs.position && <span className="err">{errs.position}</span>}
+              </div>
+              <div className={"field" + (errs.department ? " invalid" : "")}>
+                <label htmlFor="department">Phòng ban<Req /></label>
+                <input id="department" list="dl-dep" placeholder="VD: Phòng Xuất nhập khẩu" value={f.department} onChange={set("department")} />
+                {errs.department && <span className="err">{errs.department}</span>}
+              </div>
+            </div>
+            <datalist id="dl-pos">
+              <option>Nhân viên</option><option>Trưởng nhóm</option><option>Trưởng phòng</option><option>Phó phòng</option><option>Giám đốc</option><option>Thực tập sinh</option>
+            </datalist>
+            <datalist id="dl-dep">
+              <option>Phòng Kinh doanh</option><option>Phòng Chứng từ</option><option>Phòng Khai thác / Vận hành</option><option>Phòng Kế toán</option><option>Phòng Hành chính – Nhân sự</option><option>Phòng Xuất nhập khẩu</option><option>Kho</option>
+            </datalist>
           </div>
         </div>
 
+        {/* Section 2: Loại đơn */}
         <div className="sec">
-          <div className="sec-label">Thời gian</div>
-          <div id="t-leave" className="grid" hidden={t !== "leave"}>
-            <div className="field">
-              <label htmlFor="leaveKind">Hình thức nghỉ<Req /></label>
-              <select id="leaveKind" value={f.leaveKind} onChange={set("leaveKind")}>
-                <option>Nghỉ phép năm</option><option>Nghỉ ốm</option><option>Nghỉ việc riêng có lương</option><option>Nghỉ không lương</option><option>Nghỉ chế độ (cưới, tang, thai sản…)</option><option>Khác</option>
-              </select>
-            </div>
-            <div className={"field" + (errs.fromDate ? " invalid" : "")}>
-              <label htmlFor="fromDate">Từ ngày<Req /></label>
-              <input type="date" id="fromDate" value={f.fromDate} onChange={set("fromDate")} />
-              {errs.fromDate && <span className="err">{errs.fromDate}</span>}
-            </div>
-            <div className="field">
-              <label htmlFor="fromPart">Bắt đầu từ</label>
-              <select id="fromPart" value={f.fromPart} onChange={set("fromPart")}>
-                <option value="am">Buổi sáng</option><option value="pm">Buổi chiều</option>
-              </select>
-            </div>
-            <div className={"field" + (errs.toDate ? " invalid" : "")}>
-              <label htmlFor="toDate">Đến hết ngày<Req /></label>
-              <input type="date" id="toDate" value={f.toDate} onChange={set("toDate")} />
-              {errs.toDate && <span className="err">{errs.toDate}</span>}
-            </div>
-            <div className="field">
-              <label htmlFor="toPart">Kết thúc hết</label>
-              <select id="toPart" value={f.toPart} onChange={set("toPart")}>
-                <option value="pm">Buổi chiều</option><option value="am">Buổi sáng</option>
-              </select>
-            </div>
+          <div className="sec-aside">
+            <div className="sec-label">Loại đơn</div>
+            <p className="sec-desc">Chọn hình thức xin phép phù hợp</p>
           </div>
-
-          <div id="t-time" className="grid" hidden={t === "leave"}>
-            <div className={"field" + (errs.date ? " invalid" : "")}>
-              <label htmlFor="date">Ngày<Req /></label>
-              <input type="date" id="date" value={f.date} onChange={set("date")} />
-              {errs.date && <span className="err">{errs.date}</span>}
-            </div>
-            <div className={"field" + (errs.timeFrom ? " invalid" : "")} id="f-timeFrom">
-              <label htmlFor="timeFrom" id="lbl-timeFrom">{lblFrom}<Req /></label>
-              <input type="time" id="timeFrom" value={f.timeFrom} onChange={set("timeFrom")} />
-              {errs.timeFrom && <span className="err">{errs.timeFrom}</span>}
-            </div>
-            <div className={"field" + (errs.timeTo ? " invalid" : "")} id="f-timeTo" hidden={t !== "out"}>
-              <label htmlFor="timeTo" id="lbl-timeTo">Quay lại lúc<Req /></label>
-              <input type="time" id="timeTo" value={f.timeTo} onChange={set("timeTo")} />
-              {errs.timeTo && <span className="err">{errs.timeTo}</span>}
-            </div>
-            <div className="field" id="f-shiftStart" hidden={t !== "late"}>
-              <label htmlFor="shiftStart">Giờ vào ca</label>
-              <input type="time" id="shiftStart" value={f.shiftStart} onChange={set("shiftStart")} />
-            </div>
-            <div className="field" id="f-shiftEnd" hidden={t !== "early"}>
-              <label htmlFor="shiftEnd">Giờ tan ca</label>
-              <input type="time" id="shiftEnd" value={f.shiftEnd} onChange={set("shiftEnd")} />
-            </div>
-          </div>
-
-          <div className="calc" id="calc">
-            <span>Tổng thời gian:</span>
-            <b id="calcVal">{calcVal}</b>
-            <span className="hint" id="calcNote">{calcNote}</span>
-          </div>
-        </div>
-
-        <div className="sec">
-          <div className="sec-label">Lý do và bàn giao</div>
-          <div className={"field" + (errs.reason ? " invalid" : "")}>
-            <label htmlFor="reason">Lý do cụ thể<Req /></label>
-            <textarea
-              id="reason"
-              placeholder="Ghi rõ lý do, ví dụ: Đưa con đi khám tại BV Nhi Đồng 1, có giấy hẹn khám lúc 9h00."
-              value={f.reason}
-              onChange={set("reason")}
-            />
-            <span className="hint">Tối thiểu 10 ký tự. Lý do càng rõ, quản lý duyệt càng nhanh.</span>
-            {errs.reason && <span className="err">{errs.reason}</span>}
-          </div>
-          <div className="grid">
-            <div className="field">
-              <label htmlFor="handover">Người nhận bàn giao công việc</label>
-              <input id="handover" placeholder="Họ tên đồng nghiệp (nếu có)" value={f.handover} onChange={set("handover")} />
-            </div>
-            <div className="field">
-              <label htmlFor="phone">SĐT liên hệ khi vắng mặt</label>
-              <input id="phone" inputMode="tel" placeholder="09xx xxx xxx" value={f.phone} onChange={set("phone")} />
+          <div className="sec-main">
+            <div className="types" id="types">
+              {Object.keys(TYPES).map((k) => (
+                <label key={k} style={{ "--tc": TYPES[k].c }}>
+                  <input type="radio" name="type" id={"type-" + k} value={k} checked={t === k} onChange={set("type")} />
+                  <b>{TYPES[k].l}</b>
+                  <span>{TYPE_DESC[k]}</span>
+                </label>
+              ))}
             </div>
           </div>
         </div>
 
+        {/* Section 3: Thời gian */}
+        <div className="sec">
+          <div className="sec-aside">
+            <div className="sec-label">Thời gian</div>
+            <p className="sec-desc">Chi tiết khoảng thời gian xin phép</p>
+          </div>
+          <div className="sec-main">
+            <div id="t-leave" className="grid" hidden={t !== "leave"}>
+              <div className="field">
+                <label htmlFor="leaveKind">Hình thức nghỉ<Req /></label>
+                <select id="leaveKind" value={f.leaveKind} onChange={set("leaveKind")}>
+                  <option>Nghỉ phép năm</option><option>Nghỉ ốm</option><option>Nghỉ việc riêng có lương</option><option>Nghỉ không lương</option><option>Nghỉ chế độ (cưới, tang, thai sản…)</option><option>Khác</option>
+                </select>
+              </div>
+              <div className={"field" + (errs.fromDate ? " invalid" : "")}>
+                <label htmlFor="fromDate">Từ ngày<Req /></label>
+                <input type="date" id="fromDate" value={f.fromDate} onChange={set("fromDate")} />
+                {errs.fromDate && <span className="err">{errs.fromDate}</span>}
+              </div>
+              <div className="field">
+                <label htmlFor="fromPart">Bắt đầu từ</label>
+                <select id="fromPart" value={f.fromPart} onChange={set("fromPart")}>
+                  <option value="am">Buổi sáng</option><option value="pm">Buổi chiều</option>
+                </select>
+              </div>
+              <div className={"field" + (errs.toDate ? " invalid" : "")}>
+                <label htmlFor="toDate">Đến hết ngày<Req /></label>
+                <input type="date" id="toDate" value={f.toDate} onChange={set("toDate")} />
+                {errs.toDate && <span className="err">{errs.toDate}</span>}
+              </div>
+              <div className="field">
+                <label htmlFor="toPart">Kết thúc hết</label>
+                <select id="toPart" value={f.toPart} onChange={set("toPart")}>
+                  <option value="pm">Buổi chiều</option><option value="am">Buổi sáng</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="t-time" className="grid" hidden={t === "leave"}>
+              <div className={"field" + (errs.date ? " invalid" : "")}>
+                <label htmlFor="date">Ngày<Req /></label>
+                <input type="date" id="date" value={f.date} onChange={set("date")} />
+                {errs.date && <span className="err">{errs.date}</span>}
+              </div>
+              <div className={"field" + (errs.timeFrom ? " invalid" : "")} id="f-timeFrom">
+                <label htmlFor="timeFrom" id="lbl-timeFrom">{lblFrom}<Req /></label>
+                <input type="time" id="timeFrom" value={f.timeFrom} onChange={set("timeFrom")} />
+                {errs.timeFrom && <span className="err">{errs.timeFrom}</span>}
+              </div>
+              <div className={"field" + (errs.timeTo ? " invalid" : "")} id="f-timeTo" hidden={t !== "out"}>
+                <label htmlFor="timeTo" id="lbl-timeTo">Quay lại lúc<Req /></label>
+                <input type="time" id="timeTo" value={f.timeTo} onChange={set("timeTo")} />
+                {errs.timeTo && <span className="err">{errs.timeTo}</span>}
+              </div>
+              <div className="field" id="f-shiftStart" hidden={t !== "late"}>
+                <label htmlFor="shiftStart">Giờ vào ca</label>
+                <input type="time" id="shiftStart" value={f.shiftStart} onChange={set("shiftStart")} />
+              </div>
+              <div className="field" id="f-shiftEnd" hidden={t !== "early"}>
+                <label htmlFor="shiftEnd">Giờ tan ca</label>
+                <input type="time" id="shiftEnd" value={f.shiftEnd} onChange={set("shiftEnd")} />
+              </div>
+            </div>
+
+            <div className="calc" id="calc">
+              <span>Tổng thời gian:</span>
+              <b id="calcVal">{calcVal}</b>
+              <span className="hint" id="calcNote">{calcNote}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Section 4: Lý do và bàn giao */}
+        <div className="sec">
+          <div className="sec-aside">
+            <div className="sec-label">Lý do và bàn giao</div>
+            <p className="sec-desc">Chi tiết lý do và phương thức liên hệ</p>
+          </div>
+          <div className="sec-main">
+            <div className={"field" + (errs.reason ? " invalid" : "")}>
+              <label htmlFor="reason">Lý do cụ thể<Req /></label>
+              <textarea
+                id="reason"
+                placeholder="Ghi rõ lý do, ví dụ: Đưa con đi khám tại BV Nhi Đồng 1, có giấy hẹn khám lúc 9h00."
+                value={f.reason}
+                onChange={set("reason")}
+              />
+              <span className="hint">Tối thiểu 10 ký tự. Lý do càng rõ, quản lý duyệt càng nhanh.</span>
+              {errs.reason && <span className="err">{errs.reason}</span>}
+            </div>
+            <div className="grid">
+              <div className="field">
+                <label htmlFor="handover">Người nhận bàn giao công việc</label>
+                <input id="handover" placeholder="Họ tên đồng nghiệp (nếu có)" value={f.handover} onChange={set("handover")} />
+              </div>
+              <div className="field">
+                <label htmlFor="phone">SĐT liên hệ khi vắng mặt</label>
+                <input id="phone" inputMode="tel" placeholder="09xx xxx xxx" value={f.phone} onChange={set("phone")} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Actions bar matching bottom bar of screenshot */}
         <div className="actions">
-          <button type="reset" className="btn" id="btnReset">Xoá nội dung</button>
-          <button type="submit" className="btn primary" id="btnSubmit" disabled={sending}>{sending ? "Đang gửi…" : "Gửi đơn"}</button>
+          <button type="reset" className="btn" id="btnReset">Đặt lại</button>
+          <button type="submit" className="btn primary" id="btnSubmit" disabled={sending}>
+            {sending ? "Đang gửi…" : "Gửi đơn"}
+          </button>
         </div>
       </form>
     </section>

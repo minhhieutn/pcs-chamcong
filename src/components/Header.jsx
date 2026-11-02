@@ -9,8 +9,11 @@ export default function Header({ view, onChange }) {
     <header className="top">
       <div className="wrap">
         <div className="brand">
-          <h1>Sổ Đơn Nghỉ &amp; Ra Vào</h1>
-          <small>Nghỉ phép · Đi muộn · Về sớm · Ra ngoài giữa giờ</small>
+          <img className="logo" src="/logo.svg" alt="PCS Logistics" width="62" height="40" />
+          <div className="brand-text">
+            <h1>Sổ Đơn Nghỉ &amp; Ra Vào</h1>
+            <small>Nghỉ phép · Đi muộn · Về sớm · Ra ngoài giữa giờ</small>
+          </div>
         </div>
         <nav className="tabs" role="tablist">
           {tab("new", "Tạo đơn")}
