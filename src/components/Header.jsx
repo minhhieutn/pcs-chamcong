@@ -1,8 +1,7 @@
-export default function Header({ view, onChange, isAdmin, pending }) {
-  const tab = (id, label, extra) => (
-    <button id={"tab-" + id} role="tab" aria-selected={view === id} onClick={() => onChange(id)} hidden={id === "admin" && !isAdmin}>
+export default function Header({ view, onChange }) {
+  const tab = (id, label) => (
+    <button id={"tab-" + id} role="tab" aria-selected={view === id} onClick={() => onChange(id)}>
       {label}
-      {extra}
     </button>
   );
 
@@ -16,13 +15,6 @@ export default function Header({ view, onChange, isAdmin, pending }) {
         <nav className="tabs" role="tablist">
           {tab("new", "Tạo đơn")}
           {tab("mine", "Đơn của tôi")}
-          {tab(
-            "admin",
-            "Quản lý",
-            <span className="count" id="pendCount" hidden={!pending}>
-              {pending}
-            </span>
-          )}
         </nav>
       </div>
     </header>

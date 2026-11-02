@@ -23,7 +23,7 @@ function CancelButton({ onConfirm }) {
   );
 }
 
-export default function MyRequests({ hidden, items, statusOf, onCancel }) {
+export default function MyRequests({ hidden, items, onCancel }) {
   const list = [...items].sort((a, b) => b.createdAt - a.createdAt);
 
   return (
@@ -34,7 +34,7 @@ export default function MyRequests({ hidden, items, statusOf, onCancel }) {
           <div className="empty"><b>Bạn chưa có đơn nào</b>Đơn bạn gửi sẽ hiện ở đây kèm trạng thái duyệt.</div>
         ) : (
           list.map((r) => {
-            const w = whenText(r), a = statusOf(r.uid, r.id), T = TYPES[r.type];
+            const w = whenText(r), a = { status: "pending" }, T = TYPES[r.type];
             return (
               <div className="card" style={{ "--tc": T.c }} key={r.id}>
                 <div className="row"><span className="ty">{T.l}</span><span className={"chip st-" + a.status}>{ST[a.status]}</span></div>

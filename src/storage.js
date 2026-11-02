@@ -1,7 +1,6 @@
 // Lớp lưu trữ cục bộ (localStorage). Bản gốc lưu trên claude.ai (claude.use("db"));
 // khi cần backend thật, chỉ cần thay các hàm trong file này.
 const K_REQ = "pcs-chamcong:requests";
-const K_APP = "pcs-chamcong:approvals";
 const K_PROFILE = "pcs-chamcong:profile";
 
 export const LOCAL_UID = "local";
@@ -34,15 +33,13 @@ export const storageAvailable = () => {
 
 export const loadRequests = () => lsGet(K_REQ) || [];
 export const saveRequests = (list) => lsSet(K_REQ, list);
-export const loadApprovals = () => lsGet(K_APP) || {};
-export const saveApprovals = (map) => lsSet(K_APP, map);
 export const loadProfile = () => lsGet(K_PROFILE);
 export const saveProfile = (p) => lsSet(K_PROFILE, p);
 
 // Đồng bộ giữa các tab trình duyệt.
 export function onExternalChange(cb) {
   const h = (e) => {
-    if (e.key === K_REQ || e.key === K_APP) cb();
+    if (e.key === K_REQ) cb();
   };
   window.addEventListener("storage", h);
   return () => window.removeEventListener("storage", h);

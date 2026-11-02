@@ -1,4 +1,4 @@
-export const TYPES = {
+﻿export const TYPES = {
   leave: { l: "Nghỉ phép", c: "var(--t-leave)" },
   late: { l: "Đi muộn", c: "var(--t-late)" },
   early: { l: "Về sớm", c: "var(--t-early)" },
@@ -66,33 +66,4 @@ export function whenText(r) {
   if (r.type === "late") return { main: fmtD(r.date) + " · đến " + r.timeFrom, sub: "Muộn " + dur(r.minutes) + " (ca " + r.shiftStart + ")" };
   if (r.type === "early") return { main: fmtD(r.date) + " · về " + r.timeFrom, sub: "Sớm " + dur(r.minutes) + " (tan ca " + r.shiftEnd + ")" };
   return { main: fmtD(r.date) + " · " + r.timeFrom + "–" + r.timeTo, sub: "Vắng " + dur(r.minutes) };
-}
-
-export const approvalKey = (u, id) => u + "__" + id;
-
-export function buildCsv(rows) {
-  const head = ["Ngày gửi", "Họ và tên", "Chức vụ", "Phòng ban", "Loại đơn", "Hình thức nghỉ", "Từ ngày", "Đến ngày", "Số ngày", "Ngày", "Từ giờ", "Đến giờ", "Số phút", "Lý do", "Bàn giao", "SĐT", "Trạng thái", "Ghi chú duyệt"];
-  const q = (v) => '"' + String(v ?? "").replace(/"/g, '""') + '"';
-  const lines = rows.map((r) =>
-    [
-      fmtDT(r.createdAt), r.name, r.position, r.department, TYPES[r.type].l, r.leaveKind || "",
-      r.fromDate ? fmtD(r.fromDate) + (r.fromPart === "pm" ? " (chiều)" : "") : "",
-      r.toDate ? fmtD(r.toDate) + (r.toPart === "am" ? " (sáng)" : "") : "",
-      r.days ?? "",
-      r.date ? fmtD(r.date) : "", r.timeFrom || "", r.timeTo || "", r.minutes ?? "",
-      r.reason, r.handover, r.phone, ST[r._st.status], r._st.note || "",
-    ].map(q).join(",")
-  );
-  return "﻿" + [head.map(q).join(","), ...lines].join("\r\n");
-}
-
-export function downloadFile(filename, data, type = "text/csv;charset=utf-8") {
-  const url = URL.createObjectURL(new Blob([data], { type }));
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
