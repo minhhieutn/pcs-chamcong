@@ -1,11 +1,11 @@
 import { TYPES, todayISO, whenText } from "./utils.js";
 
-// Địa chỉ trigger "When an HTTP request is received" của flow Power Automate (đặt trong .env).
-const FLOW_URL = import.meta.env.VITE_FLOW_URL;
-export const flowConfigured = Boolean(FLOW_URL);
+// Địa chỉ Production URL của node Webhook trong n8n (đặt trong .env).
+const WEBHOOK_URL = import.meta.env.VITE_WEBHOOK_URL;
+export const webhookConfigured = Boolean(WEBHOOK_URL);
 
-// Tên khoá khớp với tên cột trong SharePoint List.
-export function toFlowPayload(r) {
+// Tên khoá trùng với tên cột ở dòng tiêu đề của Google Sheet.
+export function toWebhookPayload(r) {
   const leave = r.type === "leave";
   const w = whenText(r);
   return {
@@ -28,22 +28,22 @@ export function toFlowPayload(r) {
     nguoibangiao: r.handover,
     sdt: r.phone,
     trangthai: "Cho duyet",
-    // Chỉ dùng trong flow (điều kiện "cùng ngày" và nội dung tin Teams), không phải cột của List.
+    // Chỉ dùng trong workflow n8n (điều kiện "cùng ngày" và nội dung tin nhắn), không phải cột của Sheet.
     homnay: todayISO(),
     thoigian: w.main + " · " + w.sub,
   };
 }
 
-// Content-Type text/plain để trình duyệt không gửi preflight (trigger HTTP của Power Automate không trả CORS cho OPTIONS).
-// Flow phải có bước Response kèm header Access-Control-Allow-Origin: *.
-export async function sendToFlow(record) {
+// Content-Type text/plain để trình duyệt không gửi preflight.
+// Workflow phải trả về header Access-Control-Allow-Origin: * (node Respond to Webhook).
+export async function sendToWebhook(record) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 20000);
   try {
-    const res = await fetch(FLOW_URL, {
+    const res = await fetch(WEBHOOK_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=UTF-8" },
-      body: JSON.stringify(toFlowPayload(record)),
+      body: JSON.stringify(toWebhookPayload(record)),
       signal: ctrl.signal,
     });
     if (!res.ok) throw new Error("HTTP " + res.status);

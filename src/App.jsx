@@ -3,7 +3,7 @@ import Header from "./components/Header.jsx";
 import RequestForm from "./components/RequestForm.jsx";
 import MyRequests from "./components/MyRequests.jsx";
 import { LOCAL_UID, loadRequests, onExternalChange, saveRequests, storageAvailable } from "./storage.js";
-import { flowConfigured, sendToFlow } from "./api.js";
+import { sendToWebhook, webhookConfigured } from "./api.js";
 import { TYPES } from "./utils.js";
 
 export default function App() {
@@ -24,9 +24,9 @@ export default function App() {
   const submit = async (record) => {
     const id = record.createdAt.toString(36) + Math.random().toString(36).slice(2, 6);
     const full = { ...record, id, uid: LOCAL_UID };
-    if (flowConfigured) {
+    if (webhookConfigured) {
       try {
-        await sendToFlow(full);
+        await sendToWebhook(full);
       } catch (e) {
         toast("Gửi chưa thành công. Thử lại sau ít phút.");
         return false;
@@ -55,8 +55,8 @@ export default function App() {
           Trình duyệt đang chặn lưu trữ cục bộ nên đơn sẽ không được lưu lại sau khi tải lại trang.
         </div>
 
-        <div className="notice warn" hidden={flowConfigured}>
-          Chưa cấu hình VITE_FLOW_URL nên đơn chỉ được lưu trên máy này, chưa gửi lên SharePoint.
+        <div className="notice warn" hidden={webhookConfigured}>
+          Chưa cấu hình VITE_WEBHOOK_URL nên đơn chỉ được lưu trên máy này, chưa gửi lên Google Sheet.
         </div>
 
         <div hidden={view !== "new"}>
