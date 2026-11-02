@@ -2,6 +2,7 @@
 // khi cần backend thật, chỉ cần thay các hàm trong file này.
 const K_REQ = "pcs-chamcong:requests";
 const K_PROFILE = "pcs-chamcong:profile";
+const K_LAST = "pcs-chamcong:lastSent";
 
 export const LOCAL_UID = "local";
 
@@ -33,6 +34,8 @@ export const storageAvailable = () => {
 
 export const loadRequests = () => lsGet(K_REQ) || [];
 export const saveRequests = (list) => lsSet(K_REQ, list);
+export const loadLastSent = () => lsGet(K_LAST) || 0;
+export const saveLastSent = (ms) => lsSet(K_LAST, ms);
 export const loadProfile = () => lsGet(K_PROFILE);
 export const saveProfile = (p) => lsSet(K_PROFILE, p);
 

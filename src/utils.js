@@ -31,6 +31,11 @@ export const dur = (m) => {
   return (h ? h + " giờ " : "") + (r ? r + " phút" : "").trim();
 };
 
+export const waitText = (ms) => {
+  const s = Math.ceil(ms / 1000);
+  return s < 60 ? s + " giây" : Math.ceil(s / 60) + " phút";
+};
+
 // Tính số ngày nghỉ: mỗi ngày = 1, trừ nửa ngày ở hai đầu, không tính Chủ nhật
 export function leaveDays(f) {
   const a = f.fromDate, b = f.toDate;

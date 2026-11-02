@@ -2,9 +2,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Header from "./components/Header.jsx";
 import RequestForm from "./components/RequestForm.jsx";
 import MyRequests from "./components/MyRequests.jsx";
-import { LOCAL_UID, loadRequests, onExternalChange, saveRequests, storageAvailable } from "./storage.js";
-import { sendToWebhook, webhookConfigured } from "./api.js";
-import { TYPES } from "./utils.js";
+import { LOCAL_UID, loadLastSent, loadRequests, onExternalChange, saveLastSent, saveRequests, storageAvailable } from "./storage.js";
+import { COOLDOWN_MS, sendToWebhook, webhookConfigured } from "./api.js";
+import { TYPES, waitText } from "./utils.js";
 
 export default function App() {
   const [view, setView] = useState("new");
@@ -25,12 +25,22 @@ export default function App() {
     const id = record.createdAt.toString(36) + Math.random().toString(36).slice(2, 6);
     const full = { ...record, id, uid: LOCAL_UID };
     if (webhookConfigured) {
+      const left = Math.min(COOLDOWN_MS, COOLDOWN_MS - (Date.now() - loadLastSent()));
+      if (left > 0) {
+        toast("Bạn vừa gửi đơn. Vui lòng thử lại sau " + waitText(left) + ".");
+        return false;
+      }
       try {
         await sendToWebhook(full);
       } catch (e) {
-        toast("Gửi chưa thành công. Thử lại sau ít phút.");
+        toast(
+          e.status === 429
+            ? "Bạn gửi đơn quá nhanh. Vui lòng thử lại sau " + waitText((e.retryAfter || COOLDOWN_MS / 1000) * 1000) + "."
+            : "Gửi chưa thành công. Thử lại sau ít phút."
+        );
         return false;
       }
+      saveLastSent(Date.now());
     }
     const next = [...loadRequests(), full];
     saveRequests(next);

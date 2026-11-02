@@ -4,6 +4,10 @@ import { TYPES, todayISO, whenText } from "./utils.js";
 const WEBHOOK_URL = import.meta.env.VITE_WEBHOOK_URL;
 export const webhookConfigured = Boolean(WEBHOOK_URL);
 
+// Khoảng chờ giữa hai lần gửi đơn trên cùng một trình duyệt. Chỉ chặn bấm nhầm/spam đơn giản,
+// việc chặn thật nằm ở workflow n8n (xem docs/n8n-google-sheets.md).
+export const COOLDOWN_MS = 5 * 60 * 1000;
+
 // Tên khoá trùng với tên cột ở dòng tiêu đề của Google Sheet.
 export function toWebhookPayload(r) {
   const leave = r.type === "leave";
@@ -46,7 +50,17 @@ export async function sendToWebhook(record) {
       body: JSON.stringify(toWebhookPayload(record)),
       signal: ctrl.signal,
     });
-    if (!res.ok) throw new Error("HTTP " + res.status);
+    if (!res.ok) {
+      const err = new Error("HTTP " + res.status);
+      err.status = res.status;
+      if (res.status === 429) {
+        // n8n trả {"ok":false,"retryAfter":<giây>} khi chặn spam.
+        try {
+          err.retryAfter = Number((await res.json()).retryAfter) || 0;
+        } catch (e) {}
+      }
+      throw err;
+    }
   } finally {
     clearTimeout(timer);
   }

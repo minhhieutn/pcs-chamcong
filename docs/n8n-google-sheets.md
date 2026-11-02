@@ -29,27 +29,69 @@ Tạo workflow mới tên `Nhận đơn nghỉ`, thêm lần lượt các node:
 - **Options → Allowed Origins (CORS)**: `*`
 
 ### Node 2 — Code (đặt tên `Chuan hoa`)
-App gửi nội dung JSON dạng `text/plain` để trình duyệt không phải gửi preflight, nên node này chuyển chuỗi thành đối tượng và thêm giờ gửi:
+Chuyển chuỗi JSON (app gửi `text/plain` để trình duyệt không phải gửi preflight) thành đối tượng, thêm giờ gửi, và **kiểm tra chống spam**: mỗi người (họ tên + phòng ban) 1 đơn mỗi 5 phút, mỗi IP tối đa 10 đơn mỗi 5 phút. Muốn đổi thì sửa `WINDOW_MS` và `IP_MAX` ở đầu đoạn code. Kết quả là hai trường `blocked` và `retryAfter` (giây).
 
 ```js
-const body = $input.first().json.body;
+const item = $input.first().json;
+const body = item.body;
 const d = typeof body === 'string' ? JSON.parse(body) : body;
+
+// Chặn spam: mỗi người (họ tên + phòng ban) 1 đơn mỗi WINDOW_MS, mỗi IP tối đa IP_MAX đơn mỗi WINDOW_MS.
+const WINDOW_MS = 5 * 60 * 1000;
+const IP_MAX = 10;
+const hdr = item.headers || {};
+const ip = String(hdr['x-forwarded-for'] || hdr['x-real-ip'] || 'unknown').split(',')[0].trim();
+const person = 'p:' + [d.hoten, d.phongban].map(s => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ')).join('|');
+const ipKey = 'ip:' + ip;
+
+const sd = $getWorkflowStaticData('global');
+const now = Date.now();
+const sent = {};
+for (const [k, v] of Object.entries(sd.sent || {})) {
+  const recent = v.filter(t => now - t < WINDOW_MS);
+  if (recent.length) sent[k] = recent;
+}
+const personHits = sent[person] || [];
+const ipHits = sent[ipKey] || [];
+let wait = 0;
+if (personHits.length >= 1) wait = Math.max(wait, WINDOW_MS - (now - personHits[0]));
+if (ip !== 'unknown' && ipHits.length >= IP_MAX) wait = Math.max(wait, WINDOW_MS - (now - ipHits[0]));
+
+d.blocked = wait > 0;
+d.retryAfter = Math.ceil(wait / 1000);
+if (!d.blocked) {
+  sent[person] = [...personHits, now];
+  if (ip !== 'unknown') sent[ipKey] = [...ipHits, now];
+}
+sd.sent = sent;
 d.thoigiangui = $now.setZone('Asia/Ho_Chi_Minh').toFormat('dd/MM/yyyy HH:mm');
 return [{ json: d }];
 ```
 
-### Node 3 — Google Sheets → Append Row
+### Node 3 — IF (đặt tên `Cho phep`)
+Một điều kiện kiểu **Boolean**: giá trị `{{ $json.blocked }}` là **false**.
+- Nhánh **true** → node Google Sheets (Node 4).
+- Nhánh **false** → node Respond to Webhook báo chặn (Node 3b).
+
+### Node 3b — Respond to Webhook (đặt tên `Tu choi spam`)
+- **Respond With**: `JSON`, **Response Body**: `{{ JSON.stringify({ ok: false, error: "rate_limited", retryAfter: $json.retryAfter }) }}`
+- **Options → Response Code**: `429`
+- **Options → Response Headers**: `Access-Control-Allow-Origin` = `*`
+
+App đọc mã 429 và `retryAfter` để báo "Bạn gửi đơn quá nhanh. Vui lòng thử lại sau … phút."
+
+### Node 4 — Google Sheets → Append Row
 - **Credential**: đăng nhập tài khoản Google (Google Sheets OAuth2).
 - **Document**: chọn file Sheet vừa tạo. **Sheet**: `DonNghi`.
 - **Mapping Column Mode**: `Map Automatically` (tên khoá trùng tên cột nên khớp luôn; `homnay` và `thoigian` không có cột tương ứng nên bị bỏ qua).
 
-### Node 4 — Respond to Webhook
+### Node 5 — Respond to Webhook
 - **Respond With**: `JSON`, **Response Body**: `{"ok": true}`
 - **Options → Response Headers**: tên `Access-Control-Allow-Origin`, giá trị `*`
 
 Đặt node này **sau** Google Sheets: nếu ghi Sheet lỗi thì app nhận lỗi và báo "Gửi chưa thành công". Thiếu header trên thì trình duyệt chặn, app báo lỗi dù đơn đã vào Sheet.
 
-### Node 5 — IF (xin nghỉ trong ngày)
+### Node 6 — IF (xin nghỉ trong ngày)
 Một điều kiện kiểu **Boolean** với biểu thức:
 
 ```
@@ -60,7 +102,7 @@ Một điều kiện kiểu **Boolean** với biểu thức:
 
 Đơn "trong ngày" là đơn có thời gian nghỉ rơi vào đúng hôm nay. Nhánh **true** nối sang node báo Teams.
 
-### Node 6 — Báo lên Teams (nhánh true của IF)
+### Node 7 — Báo lên Teams (nhánh true của IF)
 Chọn một trong hai cách:
 
 - **Workflows webhook của kênh Teams** (không cần quản trị Azure): trong kênh Teams → `…` → **Workflows** → mẫu *Post to a channel when a webhook request is received* → copy URL. Trong n8n dùng node **HTTP Request**, method `POST`, URL vừa copy, body JSON theo mẫu mà Workflows hiển thị (mẫu thường là một Adaptive Card; đặt nội dung chữ bên dưới vào phần text).
@@ -102,6 +144,15 @@ VITE_WEBHOOK_URL=<Production URL>
 4. Chạy lại `npm run dev`, gửi thử một đơn, rồi kiểm tra dòng mới trong Sheet và mục **Executions** của n8n.
 
 Địa chỉ n8n phải truy cập được từ trình duyệt của người dùng. Nếu n8n chạy trên `localhost` thì chỉ máy đó gửi được. Khi triển khai app lên mạng, n8n cần có địa chỉ HTTPS công khai hoặc trong mạng nội bộ công ty.
+
+## Chống spam
+
+- **Trong app:** sau khi gửi thành công, trình duyệt đó bị khoá gửi 5 phút (`COOLDOWN_MS` trong `src/api.js`). Chỉ chặn bấm nhầm và spam đơn giản vì có thể bị qua mặt.
+- **Trong n8n:** Node 2 và 3 ở trên chặn thật, theo người và theo IP. Lưu bằng bộ nhớ tĩnh của workflow (`$getWorkflowStaticData`) nên:
+  - Chỉ hoạt động ở lần chạy production, không hoạt động khi bấm **Execute workflow** thử.
+  - Bộ nhớ này không chia sẻ giữa nhiều worker và nhiều request gửi cùng lúc có thể lọt qua. Muốn chặn chắc hơn thì nhờ IT đặt rate limit ở nginx/Cloudflare cho `/webhook/don-nghi`.
+  - Cả văn phòng thường dùng chung một IP, vì vậy giới hạn IP đặt lỏng (10 đơn); giới hạn chặt là theo người.
+  - Nếu bước ghi Sheet lỗi sau khi đã qua kiểm tra, người đó vẫn phải chờ hết 5 phút.
 
 ## Lưu ý bảo mật
 
