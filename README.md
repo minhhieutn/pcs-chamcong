@@ -21,6 +21,14 @@ Khi bấm **Gửi đơn**, app gửi POST tới webhook của n8n (đặt địa
 
 Tab **Đơn của tôi** chỉ là bản lưu localStorage trên từng trình duyệt. Chưa đặt VITE_WEBHOOK_URL thì đơn chỉ lưu cục bộ.
 
+## Triển khai lên Cloudflare
+
+Repo có sẵn `wrangler.jsonc` để Cloudflare phát hành thư mục `dist/` như trang tĩnh, không cần nâng Vite. Trong Workers Builds đặt:
+
+- **Build command**: `npm run build`
+- **Deploy command**: `npx wrangler deploy`
+- **Build variables**: `VITE_WEBHOOK_URL` = Production URL của n8n. Vite nhúng giá trị này lúc build, nên đặt biến sau khi đã deploy thì phải build lại.
+
 ## Cấu trúc
 
 ```
