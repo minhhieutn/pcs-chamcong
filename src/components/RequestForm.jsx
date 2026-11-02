@@ -96,6 +96,7 @@ function buildRecord(f) {
 export default function RequestForm({ onSubmit, onInvalid }) {
   const [f, setF] = useState(initialForm);
   const [errs, setErrs] = useState({});
+  const [sending, setSending] = useState(false);
   const formRef = useRef(null);
 
   const set = (k) => (e) => {
@@ -130,8 +131,9 @@ export default function RequestForm({ onSubmit, onInvalid }) {
     setErrs({});
   };
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
+    if (sending) return;
     const found = validate(f);
     flushSync(() => setErrs(found));
     if (Object.keys(found).length) {
@@ -141,9 +143,13 @@ export default function RequestForm({ onSubmit, onInvalid }) {
     }
     const r = buildRecord(f);
     saveProfile({ name: r.name, position: r.position, department: r.department });
-    onSubmit(r);
-    setF((p) => ({ ...p, reason: "", handover: "", phone: "", timeFrom: "", timeTo: "" }));
-    setErrs({});
+    setSending(true);
+    const ok = await onSubmit(r);
+    setSending(false);
+    if (ok) {
+      setF((p) => ({ ...p, reason: "", handover: "", phone: "", timeFrom: "", timeTo: "" }));
+      setErrs({});
+    }
   };
 
   const lblFrom = t === "late" ? "Giờ đến dự kiến" : t === "early" ? "Giờ xin về" : "Ra ngoài từ";
@@ -289,7 +295,7 @@ export default function RequestForm({ onSubmit, onInvalid }) {
 
         <div className="actions">
           <button type="reset" className="btn" id="btnReset">Xoá nội dung</button>
-          <button type="submit" className="btn primary" id="btnSubmit">Gửi đơn</button>
+          <button type="submit" className="btn primary" id="btnSubmit" disabled={sending}>{sending ? "Đang gửi…" : "Gửi đơn"}</button>
         </div>
       </form>
     </section>

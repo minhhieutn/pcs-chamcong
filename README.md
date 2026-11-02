@@ -15,11 +15,11 @@ npm run dev
 
 Build bản production: `npm run build` (kết quả trong `dist/`).
 
-## Lưu trữ dữ liệu
+## Gửi đơn lên SharePoint
 
-Bản HTML gốc lưu đơn trên claude.ai (`claude.use("db")`). Bản React này lưu bằng `localStorage`
-của trình duyệt (`src/storage.js`), nên dữ liệu chỉ nằm trên từng máy. Muốn dùng chung nhiều người
-cần thay các hàm trong `src/storage.js` bằng backend thật.
+Khi bấm **Gửi đơn**, app gửi POST tới flow Power Automate (đặt địa chỉ trong .env, xem .env.example), flow ghi vào SharePoint List và báo lên Teams. Cách dựng flow: [docs/flow-power-automate.md](docs/flow-power-automate.md). Mẫu cột cho List: [docs/DonNghi-mau.xlsx](docs/DonNghi-mau.xlsx).
+
+Tab **Đơn của tôi** chỉ là bản lưu localStorage trên từng trình duyệt. Chưa đặt VITE_FLOW_URL thì đơn chỉ lưu cục bộ.
 
 ## Cấu trúc
 
@@ -28,6 +28,7 @@ src/
   App.jsx                 trạng thái chung, chuyển tab, toast
   components/             Header, RequestForm, MyRequests
   utils.js                định dạng ngày giờ, tính số ngày/phút
+  api.js                  gửi đơn tới flow Power Automate
   storage.js              lưu trữ localStorage
   styles.css              CSS giữ nguyên từ bản gốc
 ```
