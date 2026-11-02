@@ -66,11 +66,28 @@ Chọn một trong hai cách:
 - **Workflows webhook của kênh Teams** (không cần quản trị Azure): trong kênh Teams → `…` → **Workflows** → mẫu *Post to a channel when a webhook request is received* → copy URL. Trong n8n dùng node **HTTP Request**, method `POST`, URL vừa copy, body JSON theo mẫu mà Workflows hiển thị (mẫu thường là một Adaptive Card; đặt nội dung chữ bên dưới vào phần text).
 - **Node Microsoft Teams** của n8n (Chat Message / Channel Message → Create): cần quản trị viên tạo ứng dụng Entra ID và cấp quyền cho n8n.
 
-Nội dung tin nhắn gợi ý:
+Với node **HTTP Request**: method `POST`, URL của Workflows, **Body Content Type** `JSON`, **Specify Body** `Using JSON`, đặt ô JSON ở chế độ **Expression** và dán đoạn dưới. Dùng `JSON.stringify` để dấu nháy kép hoặc xuống dòng trong lý do nghỉ không làm hỏng JSON (chèn `{{ }}` trực tiếp vào chuỗi JSON sẽ báo lỗi `JSON parameter needs to be valid JSON`):
 
 ```
-🔔 {{ $('Chuan hoa').item.json.hoten }} ({{ $('Chuan hoa').item.json.phongban }}) xin {{ $('Chuan hoa').item.json.loaidon }} — {{ $('Chuan hoa').item.json.thoigian }}. Lý do: {{ $('Chuan hoa').item.json.lydo }}
+{{ JSON.stringify({
+  type: "message",
+  attachments: [{
+    contentType: "application/vnd.microsoft.card.adaptive",
+    content: {
+      type: "AdaptiveCard",
+      $schema: "http://adaptivecards.io/schemas/adaptive-card.json",
+      version: "1.4",
+      body: [{
+        type: "TextBlock",
+        wrap: true,
+        text: "🔔 " + $('Chuan hoa').item.json.hoten + " (" + $('Chuan hoa').item.json.phongban + ") xin " + $('Chuan hoa').item.json.loaidon + " — " + $('Chuan hoa').item.json.thoigian + ". Lý do: " + $('Chuan hoa').item.json.lydo
+      }]
+    }
+  }]
+}) }}
 ```
+
+Nhánh **false** của node IF để trống: đơn không rơi vào hôm nay thì chỉ ghi Sheet, không báo.
 
 ## 3. Bật workflow và nối với app
 
